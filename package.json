@@ -1,0 +1,26 @@
+{
+  "name": "verbybimset",
+  "version": "1.0.0",
+  "description": "3d model visualizer with firebase connection to fill object´s properties",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Bimset Labs",
+  "license": "MIT",
+  "dependencies": {
+    "@babel/core": "^7.14.3",
+    "@babel/preset-env": "^7.14.4",
+    "babel-loader": "^8.2.2",
+    "browser-sync": "^2.26.14",
+    "circular-dependency-plugin": "^5.2.2",
+    "firebase": "^8.6.5",
+    "gulp": "^4.0.2",
+    "gulp-clean-css": "^4.3.0",
+    "gulp-util": "^3.0.8",
+    "jquery": "^3.6.0",
+    "three": "^0.129.0",
+    "webpack": "^5.38.1"
+  },
+  "devDependencies": {}
+}
