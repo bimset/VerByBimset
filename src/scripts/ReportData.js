@@ -31,6 +31,21 @@ function getModelLeafNodes(rootId, leafNodes, callback) {
   }, true);
 }
 
+function groupDataByProvider(){
+  var subTypes = {};
+
+  $.each(window.objectArray, function(i, object) {
+    if (subTypes[object.provider] == undefined) {
+      subTypes[object.provider] = new Array();
+    }
+      subTypes[object.provider].push(object.dbId);
+  });
+
+  console.log("Subtypes: ", subTypes);
+
+  return subTypes;
+}
+
 //****************************************************************************************
 //
 //      Group data according to node model types
@@ -68,7 +83,6 @@ function groupDataByType(treeNode) {
 
     return subTypes;
 }
-
 
 //****************************************************************************************
 //
@@ -186,6 +200,7 @@ function groupQtyDataByRange(qtyArr, bound, range, callback) {
 module.exports = {
   startReportDataLoader,
   groupDataByType,
+  groupDataByProvider,
   groupDataByProperty,
   getQtyDataByProperty,
   groupQtyDataByRange,

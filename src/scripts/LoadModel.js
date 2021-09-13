@@ -35,22 +35,21 @@ import 'firebase/firestore';
 import './dataClass.js';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCqTkLQA1vOtoKf85-vygUPswtQQiWKLbo",
-  authDomain: "qrcode-asset-management-5019a.firebaseapp.com",
-  databaseURL: "https://qrcode-asset-management-5019a.firebaseio.com",
-  projectId: "qrcode-asset-management-5019a",
-  storageBucket: "qrcode-asset-management-5019a.appspot.com",
-  messagingSenderId: "421592381521",
-  appId: "1:421592381521:web:2cf60523ce31b696512070",
-  measurementId: "G-WM0G3R117S"
-};
+    apiKey: "AIzaSyA0oiI_4CzOIo8VUShOhjrZIwya6VAQQGo",
+    authDomain: "adsk-viewer-extraction.firebaseapp.com",
+    projectId: "adsk-viewer-extraction",
+    storageBucket: "adsk-viewer-extraction.appspot.com",
+    messagingSenderId: "539041483072",
+    appId: "1:539041483072:web:c4795da544b676e193d2a5",
+    measurementId: "G-CW2DFMKGM8"
+  };
   var app = firebase.initializeApp(firebaseConfig);
   var db = firebase.firestore(app);
 
 // setup for PRODUCTION
 var _viewerEnv = "AutodeskProduction";
 var _myAuthToken = new authToken.MyAuthToken("PROD");
-window.objectArray = [];
+window.objectArray = new Array();
 
 
 function blankOutReportPane() {
@@ -119,7 +118,7 @@ $("#pu_viewToLoad").change(function(evt) {
 });
 
 function switchSheet() {
-
+  window.objectArray
   if (window._viewerSecondary !== null) {
     window._viewerSecondary.tearDown(); // delete everything associated with the current loaded asset
   }
@@ -148,77 +147,43 @@ function hexToVector4(hex){
     throw new Error('Bad Hex');
 }
 
-function getObjectData(docId, dbId){
-  var docRef = db.collection("asset").doc(docId);
+function getObjectData(docId, dbId, area){
+  var docRef = db.collection("objects").doc(docId);
     docRef.get().then((doc) => {
       if (doc.exists) {
         var data = doc.data();
         var arrayObj =  {
           dbId: dbId,
           docId: docId,
-          assetType: data.assetType,
-          belongsTo: data.belongsTo,
-          brand: data.brand,
-          description: data.description,
-          hasSSD: data.hasSSD,
-          isAssigned: data.isAssigned,
-          memory: data.memory,
-          model: data.model,
-          processor: data.processor,
-          processorBrand: data.processorBrand,
-          serialNumber: data.serialNumber,
-          serviceTag: data.serviceTag,
-          vRAM: data.vRAM,
-          videocard: data.videocard,
-          videocardBrand: data.videocardBrand
+          color: data.color,
+          name: data.name,
+          price: data.price,
+          contractNo: data.contractNo,
+          provider: data.provider,
+          area: area
         };
-        if (data.isAssigned) {
-          var user = data.assignedTo.get().then(res => res.data());
-          user.then(function(result) {
-            var name = result.name.toString() + " " + result.lastname.toString();
-            arrayObj["name"] = name;
-            arrayObj["division"] = result.division;
-            var color = null;
-            if (result.division.toString() == "Arquitectura") {
-              color = "#73B761";
-            } else if (result.division.toString() == "Diseño de Interiores") {
-              color = "#4A588A";
-            } else if (result.division.toString() == "IT") {
-              color = "#EE9E64";
-            } else if (result.division.toString() == "Business Development") {
-              color = "#ECC846";
-            } else if (result.division.toString() == "Bimset") {
-              color = "#CD4C46";
-            } else if (result.division.toString() == "Dirección") {
-              color = "#6E79A1";
-            } else if (result.division.toString() == "Operaciones") {
-              color = "#F0D36B";
-            } else if (result.division.toString() == "Comm, Mkt & PR") {
-              color = "#8FC581";
-            } else if (result.division.toString() == "IPD") {
-              color = "#71AFE2";
-            } else if (result.division.toString() == "Planeacion") {
-              color = "#ECC846";
-            } else if (result.division.toString() == "Finanzas") {
-              color = "#8D6FD1";
-            } else if (result.division.toString() == "RH") {
-              color = "#95DABB";
-            } else {
-              color = "#FG4650";
-            }
-            window._viewerMain.setThemingColor(dbId, hexToVector4(color));
-          })
-        } else {
-          arrayObj["name"] = "NA";
-          arrayObj["division"] = "NA";
+        switch (data.calculatePrice) {
+          case "perPiece":
+          arrayObj.totalPrice = Math.round((data.price + Number.EPSILON) * 100) / 100;
+            break;
+          case "linealMeter":
+          arrayObj.totalPrice = Math.round((data.price + Number.EPSILON) * 100) / 100;
+            break;
+          case "perArea":
+          arrayObj.totalPrice = Math.round((data.price * area + Number.EPSILON) * 100) / 100;
+            break;
+          default:
+          arrayObj.totalPrice = 0;
         }
-        console.log("Asset object: ", arrayObj);
+        var color = data.color;
+        window._viewerMain.setThemingColor(dbId, hexToVector4(color));
+        //console.log("Asset object: ", arrayObj);
         window.objectArray.push(arrayObj);
       } else {
         console.log("No such document!");
       }
     }).catch((error) => {
-      return ("Error getting document:", error);
+      console.log("Error getting document:", error);
     });
 
 }
@@ -270,7 +235,7 @@ function initializeViewerMain() {
     var thePromise = window._viewerMain.model.getPropertyDb().executeUserFunction(userFunction);
     thePromise.then(function(retValue) {
       retValue.forEach((objData, i) => {
-        getObjectData(objData.value, objData.dbId);
+        getObjectData(objData.value, objData.dbId, objData.areaValue);
       });
       window.attrIddocIDGlobal = retValue[0].attrId;
       console.log(window.objectArray);
@@ -299,56 +264,58 @@ function initializeViewerMain() {
   });
 }
 
-function initializeViewerSecondary() {
+function initializeViewerSecondary(_views2D) {
 
-  // if we already have something loaded, uninitialize and re-init (can't just load a new file!:  ?? is that a bug?)
-  if (window._viewerSecondary !== null) {
-    window._viewerSecondary.uninitialize();
-    window._viewerSecondary = null;
-  }
-
-  var viewerElement = document.getElementById("viewerSecondary"); // placeholder in HTML to stick the viewer
-  window._viewerSecondary = new Autodesk.Viewing.GuiViewer3D(viewerElement, {});
-
-  var retCode = window._viewerSecondary.initialize();
-  if (retCode !== 0) {
-    alert("ERROR: Couldn't initialize secondary viewer!");
-    console.log("ERROR Code: " + retCode); // TBD: do real error handling here
-  }
-
-  // when selecting objects in the Secondary viewer, also select the matching itmes in the Primary viewer
-  window._viewerSecondary.addEventListener(Autodesk.Viewing.SELECTION_CHANGED_EVENT, function(event) {
-    if (window._blockEventMain)
-      return;
-
-    // if a single item, select and isolate same thing in 3D.
-    var curSelSetSecondary = window._viewerSecondary.getSelection();
-    if (curSelSetSecondary.length === 1) {
-      _blockEventSecondary = true;
-
-      //window._viewerMain.clearSelection();   // reset to nothing selected (otherwise we end up in cases where it just adds to the existing selection)
-
-      // normal behavior is to isolate and zoom into the selected object, but we can only do that in 3D.
-      if (window._viewerMain.model.is2d() == false) {
-        window._viewerMain.select(curSelSetSecondary);
-        window._viewerMain.isolate(curSelSetSecondary);
-        window._viewerMain.fitToView(curSelSetSecondary);
-      } else {
-        window._viewerMain.select(curSelSetSecondary); // Call work-around to select objects in secondary view (see file TestFuncs.js)
-        window._viewerMain.fitToView(curSelSetSecondary);
-      }
-
-      _blockEventSecondary = false;
+  if (_views2D.length > 0) {
+    // if we already have something loaded, uninitialize and re-init (can't just load a new file!:  ?? is that a bug?)
+    if (window._viewerSecondary !== null) {
+      window._viewerSecondary.uninitialize();
+      window._viewerSecondary = null;
     }
-  });
 
-  // when we change sheets, we want to re-select things after this sheet is loaded
-  window._viewerSecondary.addEventListener(Autodesk.Viewing.GEOMETRY_LOADED_EVENT, function(event) {
-    window._blockEventMain = true; // prevent normal event of select/isolate/fit in main viewer
-    if (window._viewerMain.model)
-      window._viewerSecondary.select(window._viewerMain.getSelection());
-    window._blockEventMain = false;
-  });
+    var viewerElement = document.getElementById("viewerSecondary"); // placeholder in HTML to stick the viewer
+    window._viewerSecondary = new Autodesk.Viewing.GuiViewer3D(viewerElement, {});
+
+    var retCode = window._viewerSecondary.initialize();
+    if (retCode !== 0) {
+      alert("ERROR: Couldn't initialize secondary viewer!");
+      console.log("ERROR Code: " + retCode); // TBD: do real error handling here
+    }
+
+    // when selecting objects in the Secondary viewer, also select the matching itmes in the Primary viewer
+    window._viewerSecondary.addEventListener(Autodesk.Viewing.SELECTION_CHANGED_EVENT, function(event) {
+      if (window._blockEventMain)
+        return;
+
+      // if a single item, select and isolate same thing in 3D.
+      var curSelSetSecondary = window._viewerSecondary.getSelection();
+      if (curSelSetSecondary.length === 1) {
+        _blockEventSecondary = true;
+
+        //window._viewerMain.clearSelection();   // reset to nothing selected (otherwise we end up in cases where it just adds to the existing selection)
+
+        // normal behavior is to isolate and zoom into the selected object, but we can only do that in 3D.
+        if (window._viewerMain.model.is2d() == false) {
+          window._viewerMain.select(curSelSetSecondary);
+          window._viewerMain.isolate(curSelSetSecondary);
+          window._viewerMain.fitToView(curSelSetSecondary);
+        } else {
+          window._viewerMain.select(curSelSetSecondary); // Call work-around to select objects in secondary view (see file TestFuncs.js)
+          window._viewerMain.fitToView(curSelSetSecondary);
+        }
+
+        _blockEventSecondary = false;
+      }
+    });
+
+    // when we change sheets, we want to re-select things after this sheet is loaded
+    window._viewerSecondary.addEventListener(Autodesk.Viewing.GEOMETRY_LOADED_EVENT, function(event) {
+      window._blockEventMain = true; // prevent normal event of select/isolate/fit in main viewer
+      if (window._viewerMain.model)
+        window._viewerSecondary.select(window._viewerMain.getSelection());
+      window._blockEventMain = false;
+    });
+  }
 }
 
 
@@ -380,7 +347,7 @@ function loadDocument(urnStr) {
 
     loadViewMenuOptions(); // populate UX with views we just retrieved
     initializeViewerMain();
-    initializeViewerSecondary();
+    initializeViewerSecondary(_views2D);
 
     // load up first 3D view by default into the primary viewer
     if (_views3D.length > 0) {
@@ -413,6 +380,7 @@ function loadDocument(urnStr) {
 // for now, just simple diagnostic functions to make sure we know what is happing
 function loadViewSuccessFunc() {
   window._viewerMain.loadExtension('FirebaseExtension', { param1: 'value1' });
+  window._viewerMain.loadExtension('MyColorExtension', { param1: 'value2' });
   console.log("Loaded viewer successfully with given asset...");
 }
 
@@ -468,3 +436,5 @@ function loadInitialModel() {
 }
 
 window.loadInitialModel = loadInitialModel;
+
+export default hexToVector4;

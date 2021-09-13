@@ -23767,6 +23767,9 @@ module.exports = {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
 /* harmony import */ var _firebaseData_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./firebaseData.js */ "./src/scripts/firebaseData.js");
 /* harmony import */ var firebase_app__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! firebase/app */ "./node_modules/firebase/app/dist/index.esm.js");
 /* harmony import */ var firebase_firestore__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! firebase/firestore */ "./node_modules/firebase/firestore/dist/index.esm.js");
@@ -23810,14 +23813,13 @@ var models = __webpack_require__(/*! ./models.js */ "./src/scripts/models.js").m
 
 
 var firebaseConfig = {
-  apiKey: "AIzaSyCqTkLQA1vOtoKf85-vygUPswtQQiWKLbo",
-  authDomain: "qrcode-asset-management-5019a.firebaseapp.com",
-  databaseURL: "https://qrcode-asset-management-5019a.firebaseio.com",
-  projectId: "qrcode-asset-management-5019a",
-  storageBucket: "qrcode-asset-management-5019a.appspot.com",
-  messagingSenderId: "421592381521",
-  appId: "1:421592381521:web:2cf60523ce31b696512070",
-  measurementId: "G-WM0G3R117S"
+  apiKey: "AIzaSyA0oiI_4CzOIo8VUShOhjrZIwya6VAQQGo",
+  authDomain: "adsk-viewer-extraction.firebaseapp.com",
+  projectId: "adsk-viewer-extraction",
+  storageBucket: "adsk-viewer-extraction.appspot.com",
+  messagingSenderId: "539041483072",
+  appId: "1:539041483072:web:c4795da544b676e193d2a5",
+  measurementId: "G-CW2DFMKGM8"
 };
 var app = firebase_app__WEBPACK_IMPORTED_MODULE_1__.default.initializeApp(firebaseConfig);
 var db = firebase_app__WEBPACK_IMPORTED_MODULE_1__.default.firestore(app); // setup for PRODUCTION
@@ -23826,7 +23828,7 @@ var _viewerEnv = "AutodeskProduction";
 
 var _myAuthToken = new authToken.MyAuthToken("PROD");
 
-window.objectArray = [];
+window.objectArray = new Array();
 
 function blankOutReportPane() {
   $("#pieChart").empty();
@@ -23891,6 +23893,8 @@ $("#pu_viewToLoad").change(function (evt) {
 });
 
 function switchSheet() {
+  window.objectArray;
+
   if (window._viewerSecondary !== null) {
     window._viewerSecondary.tearDown(); // delete everything associated with the current loaded asset
 
@@ -23925,83 +23929,50 @@ function hexToVector4(hex) {
   throw new Error('Bad Hex');
 }
 
-function getObjectData(docId, dbId) {
-  var docRef = db.collection("asset").doc(docId);
+function getObjectData(docId, dbId, area) {
+  var docRef = db.collection("objects").doc(docId);
   docRef.get().then(function (doc) {
     if (doc.exists) {
       var data = doc.data();
       var arrayObj = {
         dbId: dbId,
         docId: docId,
-        assetType: data.assetType,
-        belongsTo: data.belongsTo,
-        brand: data.brand,
-        description: data.description,
-        hasSSD: data.hasSSD,
-        isAssigned: data.isAssigned,
-        memory: data.memory,
-        model: data.model,
-        processor: data.processor,
-        processorBrand: data.processorBrand,
-        serialNumber: data.serialNumber,
-        serviceTag: data.serviceTag,
-        vRAM: data.vRAM,
-        videocard: data.videocard,
-        videocardBrand: data.videocardBrand
+        color: data.color,
+        name: data.name,
+        price: data.price,
+        contractNo: data.contractNo,
+        provider: data.provider,
+        area: area
       };
 
-      if (data.isAssigned) {
-        var user = data.assignedTo.get().then(function (res) {
-          return res.data();
-        });
-        user.then(function (result) {
-          var name = result.name.toString() + " " + result.lastname.toString();
-          arrayObj["name"] = name;
-          arrayObj["division"] = result.division;
-          var color = null;
+      switch (data.calculatePrice) {
+        case "perPiece":
+          arrayObj.totalPrice = Math.round((data.price + Number.EPSILON) * 100) / 100;
+          break;
 
-          if (result.division.toString() == "Arquitectura") {
-            color = "#73B761";
-          } else if (result.division.toString() == "Diseño de Interiores") {
-            color = "#4A588A";
-          } else if (result.division.toString() == "IT") {
-            color = "#EE9E64";
-          } else if (result.division.toString() == "Business Development") {
-            color = "#ECC846";
-          } else if (result.division.toString() == "Bimset") {
-            color = "#CD4C46";
-          } else if (result.division.toString() == "Dirección") {
-            color = "#6E79A1";
-          } else if (result.division.toString() == "Operaciones") {
-            color = "#F0D36B";
-          } else if (result.division.toString() == "Comm, Mkt & PR") {
-            color = "#8FC581";
-          } else if (result.division.toString() == "IPD") {
-            color = "#71AFE2";
-          } else if (result.division.toString() == "Planeacion") {
-            color = "#ECC846";
-          } else if (result.division.toString() == "Finanzas") {
-            color = "#8D6FD1";
-          } else if (result.division.toString() == "RH") {
-            color = "#95DABB";
-          } else {
-            color = "#FG4650";
-          }
+        case "linealMeter":
+          arrayObj.totalPrice = Math.round((data.price + Number.EPSILON) * 100) / 100;
+          break;
 
-          window._viewerMain.setThemingColor(dbId, hexToVector4(color));
-        });
-      } else {
-        arrayObj["name"] = "NA";
-        arrayObj["division"] = "NA";
+        case "perArea":
+          arrayObj.totalPrice = Math.round((data.price * area + Number.EPSILON) * 100) / 100;
+          break;
+
+        default:
+          arrayObj.totalPrice = 0;
       }
 
-      console.log("Asset object: ", arrayObj);
+      var color = data.color;
+
+      window._viewerMain.setThemingColor(dbId, hexToVector4(color)); //console.log("Asset object: ", arrayObj);
+
+
       window.objectArray.push(arrayObj);
     } else {
       console.log("No such document!");
     }
   })["catch"](function (error) {
-    return "Error getting document:", error;
+    console.log("Error getting document:", error);
   });
 } // STEPS:
 //  0)  Initialize the Viewing Runtime
@@ -24051,7 +24022,7 @@ function initializeViewerMain() {
 
     thePromise.then(function (retValue) {
       retValue.forEach(function (objData, i) {
-        getObjectData(objData.value, objData.dbId);
+        getObjectData(objData.value, objData.dbId, objData.areaValue);
       });
       window.attrIddocIDGlobal = retValue[0].attrId;
       console.log(window.objectArray);
@@ -24080,59 +24051,61 @@ function initializeViewerMain() {
   });
 }
 
-function initializeViewerSecondary() {
-  // if we already have something loaded, uninitialize and re-init (can't just load a new file!:  ?? is that a bug?)
-  if (window._viewerSecondary !== null) {
-    window._viewerSecondary.uninitialize();
+function initializeViewerSecondary(_views2D) {
+  if (_views2D.length > 0) {
+    // if we already have something loaded, uninitialize and re-init (can't just load a new file!:  ?? is that a bug?)
+    if (window._viewerSecondary !== null) {
+      window._viewerSecondary.uninitialize();
 
-    window._viewerSecondary = null;
-  }
-
-  var viewerElement = document.getElementById("viewerSecondary"); // placeholder in HTML to stick the viewer
-
-  window._viewerSecondary = new Autodesk.Viewing.GuiViewer3D(viewerElement, {});
-
-  var retCode = window._viewerSecondary.initialize();
-
-  if (retCode !== 0) {
-    alert("ERROR: Couldn't initialize secondary viewer!");
-    console.log("ERROR Code: " + retCode); // TBD: do real error handling here
-  } // when selecting objects in the Secondary viewer, also select the matching itmes in the Primary viewer
-
-
-  window._viewerSecondary.addEventListener(Autodesk.Viewing.SELECTION_CHANGED_EVENT, function (event) {
-    if (window._blockEventMain) return; // if a single item, select and isolate same thing in 3D.
-
-    var curSelSetSecondary = window._viewerSecondary.getSelection();
-
-    if (curSelSetSecondary.length === 1) {
-      _blockEventSecondary = true; //window._viewerMain.clearSelection();   // reset to nothing selected (otherwise we end up in cases where it just adds to the existing selection)
-      // normal behavior is to isolate and zoom into the selected object, but we can only do that in 3D.
-
-      if (window._viewerMain.model.is2d() == false) {
-        window._viewerMain.select(curSelSetSecondary);
-
-        window._viewerMain.isolate(curSelSetSecondary);
-
-        window._viewerMain.fitToView(curSelSetSecondary);
-      } else {
-        window._viewerMain.select(curSelSetSecondary); // Call work-around to select objects in secondary view (see file TestFuncs.js)
-
-
-        window._viewerMain.fitToView(curSelSetSecondary);
-      }
-
-      _blockEventSecondary = false;
+      window._viewerSecondary = null;
     }
-  }); // when we change sheets, we want to re-select things after this sheet is loaded
+
+    var viewerElement = document.getElementById("viewerSecondary"); // placeholder in HTML to stick the viewer
+
+    window._viewerSecondary = new Autodesk.Viewing.GuiViewer3D(viewerElement, {});
+
+    var retCode = window._viewerSecondary.initialize();
+
+    if (retCode !== 0) {
+      alert("ERROR: Couldn't initialize secondary viewer!");
+      console.log("ERROR Code: " + retCode); // TBD: do real error handling here
+    } // when selecting objects in the Secondary viewer, also select the matching itmes in the Primary viewer
 
 
-  window._viewerSecondary.addEventListener(Autodesk.Viewing.GEOMETRY_LOADED_EVENT, function (event) {
-    window._blockEventMain = true; // prevent normal event of select/isolate/fit in main viewer
+    window._viewerSecondary.addEventListener(Autodesk.Viewing.SELECTION_CHANGED_EVENT, function (event) {
+      if (window._blockEventMain) return; // if a single item, select and isolate same thing in 3D.
 
-    if (window._viewerMain.model) window._viewerSecondary.select(window._viewerMain.getSelection());
-    window._blockEventMain = false;
-  });
+      var curSelSetSecondary = window._viewerSecondary.getSelection();
+
+      if (curSelSetSecondary.length === 1) {
+        _blockEventSecondary = true; //window._viewerMain.clearSelection();   // reset to nothing selected (otherwise we end up in cases where it just adds to the existing selection)
+        // normal behavior is to isolate and zoom into the selected object, but we can only do that in 3D.
+
+        if (window._viewerMain.model.is2d() == false) {
+          window._viewerMain.select(curSelSetSecondary);
+
+          window._viewerMain.isolate(curSelSetSecondary);
+
+          window._viewerMain.fitToView(curSelSetSecondary);
+        } else {
+          window._viewerMain.select(curSelSetSecondary); // Call work-around to select objects in secondary view (see file TestFuncs.js)
+
+
+          window._viewerMain.fitToView(curSelSetSecondary);
+        }
+
+        _blockEventSecondary = false;
+      }
+    }); // when we change sheets, we want to re-select things after this sheet is loaded
+
+
+    window._viewerSecondary.addEventListener(Autodesk.Viewing.GEOMETRY_LOADED_EVENT, function (event) {
+      window._blockEventMain = true; // prevent normal event of select/isolate/fit in main viewer
+
+      if (window._viewerMain.model) window._viewerSecondary.select(window._viewerMain.getSelection());
+      window._blockEventMain = false;
+    });
+  }
 } // load a specific document into the intialized viewer
 
 
@@ -24161,7 +24134,7 @@ function loadDocument(urnStr) {
     loadViewMenuOptions(); // populate UX with views we just retrieved
 
     initializeViewerMain();
-    initializeViewerSecondary(); // load up first 3D view by default into the primary viewer
+    initializeViewerSecondary(_views2D); // load up first 3D view by default into the primary viewer
 
     if (_views3D.length > 0) {
       loadView(window._viewerMain, _views3D[0]);
@@ -24194,6 +24167,10 @@ function loadDocument(urnStr) {
 function loadViewSuccessFunc() {
   window._viewerMain.loadExtension('FirebaseExtension', {
     param1: 'value1'
+  });
+
+  window._viewerMain.loadExtension('MyColorExtension', {
+    param1: 'value2'
   });
 
   console.log("Loaded viewer successfully with given asset...");
@@ -24247,6 +24224,7 @@ function loadInitialModel() {
 }
 
 window.loadInitialModel = loadInitialModel;
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (hexToVector4);
 
 /***/ }),
 
@@ -24891,6 +24869,19 @@ function getModelLeafNodes(rootId, leafNodes, callback) {
   instanceTree.enumNodeChildren(rootId, function (childId) {
     leafNodes.push(childId);
   }, true);
+}
+
+function groupDataByProvider() {
+  var subTypes = {};
+  $.each(window.objectArray, function (i, object) {
+    if (subTypes[object.provider] == undefined) {
+      subTypes[object.provider] = new Array();
+    }
+
+    subTypes[object.provider].push(object.dbId);
+  });
+  console.log("Subtypes: ", subTypes);
+  return subTypes;
 } //****************************************************************************************
 //
 //      Group data according to node model types
@@ -25038,6 +25029,7 @@ function groupQtyDataByRange(qtyArr, bound, range, callback) {
 module.exports = {
   startReportDataLoader: startReportDataLoader,
   groupDataByType: groupDataByType,
+  groupDataByProvider: groupDataByProvider,
   groupDataByProperty: groupDataByProperty,
   getQtyDataByProperty: getQtyDataByProperty,
   groupQtyDataByRange: groupQtyDataByRange,
@@ -25124,6 +25116,14 @@ var barChartReport = __webpack_require__(/*! ./Report_BarChart.js */ "./src/scri
 var _pieChart = null;
 window._sortOrder = "value-desc";
 var _reportOptions = [{
+  label: "Precio - Tipo",
+  fieldName: "totalPrice",
+  fieldType: "ModelType"
+}, {
+  label: "Precio - Proveedor",
+  fieldName: "provider",
+  fieldType: "ModelType"
+}, {
   label: "Cantidad - Tipo",
   fieldName: "",
   fieldType: "ModelType"
@@ -25199,7 +25199,10 @@ function runReport(index) {
   _currentQty = null;
   _currentBound = null;
 
-  if (reportObj.fieldName === "") {
+  if (reportObj.fieldName === "provider") {
+    var modelTypes = reportData.groupDataByProvider();
+    wrapDataForPieChart(modelTypes);
+  } else if (reportObj.fieldType === "ModelType") {
     var modelTypes = reportData.groupDataByType();
     wrapDataForPieChart(modelTypes);
   } else if (reportObj.fieldType === "Quantity") {
@@ -25288,6 +25291,49 @@ function wrapDataForPieChart(buckets, misCount) {
       pieObject.label = valueKey;
       pieObject.value = buckets[valueKey].length;
       pieObject.lmvIds = buckets[valueKey];
+      pieOpts.data.content.push(pieObject);
+    }
+  } else if (reportObj.fieldName === "totalPrice") {
+    for (var valueKey in buckets) {
+      var pieObject = {};
+      var totalPrice = 0;
+      pieObject.label = valueKey;
+
+      for (var docId in buckets[valueKey]) {
+        window.objectArray.forEach(function (object, i) {
+          if (buckets[valueKey][docId] == object.dbId) {
+            totalPrice = totalPrice + object.totalPrice;
+            return true;
+          }
+        });
+      }
+
+      pieObject.value = Math.round((totalPrice + Number.EPSILON) * 100) / 100;
+      ;
+      pieObject.lmvIds = buckets[valueKey];
+      pieOpts.data.content.push(pieObject);
+    }
+  } else if (reportObj.fieldName === "provider") {
+    for (var valueKey in buckets) {
+      var pieObject = {};
+      var totalPrice = 0;
+      pieObject.label = valueKey;
+      console.log("Label: ", valueKey);
+
+      for (var docId in buckets[valueKey]) {
+        window.objectArray.forEach(function (object, i) {
+          if (buckets[valueKey][docId] == object.dbId) {
+            console.log("Object: ", object);
+            totalPrice = totalPrice + object.totalPrice;
+            return true;
+          }
+        });
+      }
+
+      pieObject.value = Math.round((totalPrice + Number.EPSILON) * 100) / 100;
+      ;
+      pieObject.lmvIds = buckets[valueKey];
+      console.log(pieObject);
       pieOpts.data.content.push(pieObject);
     }
   } else {
@@ -26169,11 +26215,15 @@ var Asset = /*#__PURE__*/function () {
 /*!***********************************!*\
   !*** ./src/scripts/extensions.js ***!
   \***********************************/
-/***/ (() => {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
-// *******************************************
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _LoadModel_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./LoadModel.js */ "./src/scripts/LoadModel.js");
+ // *******************************************
 // Firebase (Docking) Panel
 // *******************************************
+
 function FirebasePanel(viewer, container, id, title, options) {
   this.viewer = viewer;
   Autodesk.Viewing.UI.DockingPanel.call(this, container, id, title, options); // the style of the docking panel
@@ -26193,11 +26243,26 @@ function FirebasePanel(viewer, container, id, title, options) {
   if (window._viewerMain.getSelection().length == 1) {
     window.objectArray.forEach(function (object, i) {
       if (window._viewerMain.getSelection()[0] == object.dbId) {
-        rows = [["dbId", object.dbId], ["docId", object.docId], ["assetType", object.assetType], ["belongsTo", object.belongsTo], ["brand", object.brand], ["description", object.description], ["hasSSD", object.hasSSD], ["isAssigned", object.isAssigned], ["memory", object.memory], ["model", object.model], ["processor", object.processor], ["processorBrand", object.processorBrand], ["serialNumber", object.serialNumber], ["serviceTag", object.serviceTag], ["vRAM", object.vRAM], ["videocard", object.videocard], ["videocardBrand", object.videocardBrand]];
+        rows = [["dbId", object.dbId], ["docId", object.docId], ["Color", object.color], ["Nombre", object.name], ["Costo Paramétrico", object.price], ["Numero de contrato", object.contractNo], ["Proveedor", object.provider]];
       }
     });
 
     this._table.setData(rows, cols);
+  } else if (currSelection.length > 1) {
+    var totalPrice = 0;
+    var allProviders = "";
+    window.objectArray.forEach(function (object, i) {
+      window._viewerMain.getSelection().forEach(function (dbId, i) {
+        if (dbId == object.dbId) {
+          totalPrice = totalPrice + object.totalPrice;
+
+          if (allProviders.search(object.provider) < 0) {
+            allProviders = allProviders + " " + object.provider;
+          }
+        }
+      });
+    });
+    rows = [["dbId", "Multi-select"], ["docId", "Multi-select"], ["Nombre", "Multi-select"], ["Costo de selección", "$" + totalPrice], ["Proveedores seleccionados", allProviders]];
   } else {
     // this is where we should place the content of our panel
     var div = document.createElement('div');
@@ -26270,10 +26335,27 @@ FirebaseExtension.prototype.createUI = function () {
     if (currSelection.length == 1) {
       window.objectArray.forEach(function (object, i) {
         if (window._viewerMain.getSelection()[0] == object.dbId) {
-          rows = [["dbId", object.dbId], ["division", object.division], ["assigned To", object.name], ["docId", object.docId], ["assetType", object.assetType], ["belongsTo", object.belongsTo], ["brand", object.brand], ["description", object.description], ["hasSSD", object.hasSSD], ["isAssigned", object.isAssigned], ["memory", object.memory], ["model", object.model], ["processor", object.processor], ["processorBrand", object.processorBrand], ["serialNumber", object.serialNumber], ["serviceTag", object.serviceTag], ["vRAM", object.vRAM], ["videocard", object.videocard], ["videocardBrand", object.videocardBrand]];
+          rows = [["dbId", object.dbId], ["docId", object.docId], ["Color", object.color], ["Nombre", object.name], ["Costo Paramétrico", "$" + object.totalPrice], ["Numero de contrato", object.contractNo], ["Proveedor", object.provider]];
         }
       });
+    } else if (currSelection.length > 1) {
+      var totalPrice = 0;
+      var allProviders = "";
+      window.objectArray.forEach(function (object, i) {
+        window._viewerMain.getSelection().forEach(function (dbId, i) {
+          if (dbId == object.dbId) {
+            totalPrice = totalPrice + object.totalPrice;
 
+            if (allProviders.search(object.provider) < 0) {
+              allProviders = allProviders + " " + object.provider;
+            }
+          }
+        });
+      });
+      rows = [["dbId", "Multi-select"], ["docId", "Multi-select"], ["Nombre", "Multi-select"], ["Costo de selección", "$" + totalPrice], ["Proveedores seleccionados", allProviders]];
+    }
+
+    if (panel != null) {
       if (panel.isVisible()) {
         console.log("Table inside selection changed and panel isVisible: ", panel._table);
 
@@ -26290,7 +26372,71 @@ FirebaseExtension.prototype.unload = function () {
   return true;
 };
 
-Autodesk.Viewing.theExtensionManager.registerExtension('FirebaseExtension', FirebaseExtension);
+Autodesk.Viewing.theExtensionManager.registerExtension('FirebaseExtension', FirebaseExtension); // *******************************************
+// My Color Extension
+// *******************************************
+
+function MyColorExtension(viewer, options) {
+  Autodesk.Viewing.Extension.call(this, viewer, options);
+}
+
+MyColorExtension.prototype = Object.create(Autodesk.Viewing.Extension.prototype);
+MyColorExtension.prototype.constructor = MyColorExtension;
+
+MyColorExtension.prototype.load = function () {
+  if (this.viewer.toolbar) {
+    // Toolbar is already available, create the UI
+    this.createUI();
+  } else {
+    // Toolbar hasn't been created yet, wait until we get notification of its creation
+    this.onToolbarCreatedBinded = this.onToolbarCreated.bind(this);
+    this.viewer.addEventListener(Autodesk.Viewing.TOOLBAR_CREATED_EVENT, this.onToolbarCreatedBinded);
+  }
+
+  return true;
+};
+
+MyColorExtension.prototype.onToolbarCreated = function () {
+  this.viewer.removeEventListener(Autodesk.Viewing.TOOLBAR_CREATED_EVENT, this.onToolbarCreatedBinded);
+  this.onToolbarCreatedBinded = null;
+  this.createUI();
+};
+
+MyColorExtension.prototype.createUI = function () {
+  // alert('TODO: Create Toolbar!');
+  var viewer = this.viewer; // Button 1
+
+  var button1 = new Autodesk.Viewing.UI.Button('red-bunny');
+  var colored = true;
+
+  button1.onClick = function (e) {
+    var objArray = window.objectArray;
+
+    if (colored) {
+      viewer.clearThemingColors(window._viewerMain.model);
+      colored = false;
+    } else {
+      objArray.forEach(function (object, index, tempArray) {
+        window._viewerMain.setThemingColor(object.dbId, (0,_LoadModel_js__WEBPACK_IMPORTED_MODULE_0__.default)(object.color));
+      });
+      colored = true;
+    }
+  };
+
+  button1.addClass('blackandwhite');
+  button1.setToolTip('Color Switch'); // SubToolbar
+
+  this.subToolbar = new Autodesk.Viewing.UI.ControlGroup('my-custom-view-toolbar');
+  this.subToolbar.addControl(button1);
+  viewer.toolbar.addControl(this.subToolbar);
+};
+
+MyColorExtension.prototype.unload = function () {
+  this.viewer.toolbar.removeControl(this.subToolbar);
+  return true;
+};
+
+Autodesk.Viewing.theExtensionManager.registerExtension('MyColorExtension', MyColorExtension);
 
 /***/ }),
 
@@ -26307,43 +26453,66 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 function userFunction(pdb) {
   var attrIddocID = -1;
+  var attrIdArea = -1;
   var bimObject = null;
-  var bimObjArr = []; // Iterate over all attributes and find the index to the one we are interested in
+  var bimObjArr = [];
+  var docIdBool,
+      areaBool = false; // Iterate over all attributes and find the index to the one we are interested in
 
-  /*
-  pdb.enumAttributes(function(i, attrDef, attrRaw) {
-      var name = attrDef.name;
-    console.log(name, i);
-    if ( name === 'DOCID') {
+  pdb.enumAttributes(function (i, attrDef, attrRaw) {
+    var name = attrDef.name;
+
+    if (name === 'docId') {
       attrIddocID = i;
-      return true; // to stop iterating over the remaining attributes.
+      console.log(name, " ", attrIddocID);
+      docIdBool = true;
     }
-  });
-  */
 
-  attrIddocID = 66; // Early return is the model doesn't contain data for "docID".
+    if (name === 'Area') {
+      attrIdArea = i; //console.log(name, " ", attrIdArea);
+
+      areaBool = true;
+    }
+
+    if (areaBool && docIdBool) {
+      //console.log("docId: ", attrIddocID, " areaId: ", attrIdArea);
+      return true;
+    }
+  }); // Early return is the model doesn't contain data for "docID".
 
   if (attrIddocID === -1) return null;
   var value = 0;
+  var countObj = 0;
   pdb.enumObjects(function (dbId) {
     // For each part, iterate over their properties.
+    var docIdValue,
+        areaValue = null;
+    var docIdBool,
+        areaBool = false;
     pdb.enumObjectProperties(dbId, function (attrId, valId) {
       // Only process 'docID' property.
-      if (attrId === attrIddocID) {
-        bimObject = {
-          dbId: dbId,
-          attrId: attrId,
-          value: pdb.getAttrValue(attrId, valId)
-        };
+      if (attrId == attrIddocID) {
+        docIdValue = pdb.getAttrValue(attrId, valId);
+        docIdBool = true;
+      }
 
-        if (bimObject.value == "") {} else {
-          bimObjArr.push(bimObject);
-        } // Stop iterating over additional properties when "docID" is found.
+      if (attrId == attrIdArea) {
+        areaValue = pdb.getAttrValue(attrId, valId); //console.log("isNaN: ", !(isNaN(areaValue)), " value: ", areaValue, " IdArea: ", attrIdArea);
 
-
-        return true;
+        areaBool = true;
       }
     });
+    bimObject = {
+      dbId: dbId,
+      attrId: attrIddocID,
+      value: docIdValue,
+      areaAttrId: attrIdArea,
+      areaValue: areaValue
+    }; //console.log("bimObject: ", bimObject);
+
+    if (bimObject.value == "" || bimObject.value == null) {} else {
+      bimObjArr.push(bimObject);
+    }
   });
   return bimObjArr;
 }

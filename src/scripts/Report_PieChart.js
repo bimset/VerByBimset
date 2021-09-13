@@ -5,6 +5,8 @@ let _pieChart = null;
 window._sortOrder = "value-desc";
 
 let _reportOptions = [
+    { label : "Precio - Tipo",             fieldName: "totalPrice",                  fieldType : "ModelType"},
+    { label : "Precio - Proveedor",             fieldName: "provider",                  fieldType : "ModelType"},
     { label : "Cantidad - Tipo",             fieldName: "",                  fieldType : "ModelType"},
     { label : "Suma por categoría - Lenght",            fieldName: "Length",             fieldType : "PropertySum"},
     { label : "Cantidad - Nivel",            fieldName: "Level",             fieldType : "Properties"},
@@ -45,7 +47,6 @@ function runReport(index) {
         // if they pass in a negative index, look up the current one
     if (typeof (index) === "undefined" || index === -1)
         index = parseInt($("#pu_reportToRun option:selected").val(), 10);
-
     var reportObj = _reportOptions[index];
     console.log("Running report: " + reportObj.label);
 
@@ -53,7 +54,10 @@ function runReport(index) {
     _currentQty = null;
     _currentBound = null;
 
-    if (reportObj.fieldName === "") {
+    if (reportObj.fieldName === "provider") {
+      var modelTypes = reportData.groupDataByProvider();
+      wrapDataForPieChart(modelTypes);
+    } else if (reportObj.fieldType === "ModelType") {
         var modelTypes = reportData.groupDataByType();
         wrapDataForPieChart(modelTypes);
     }
@@ -146,6 +150,45 @@ function wrapDataForPieChart(buckets, misCount) {
           pieObject.label = valueKey;
           pieObject.value = buckets[valueKey].length;
           pieObject.lmvIds = buckets[valueKey];
+          pieOpts.data.content.push(pieObject);
+      }
+    }
+    else if (reportObj.fieldName === "totalPrice") {
+      for (var valueKey in buckets) {
+          var pieObject = {};
+          var totalPrice = 0;
+          pieObject.label = valueKey;
+          for (var docId in buckets[valueKey]) {
+            window.objectArray.forEach((object, i) => {
+              if (buckets[valueKey][docId] == object.dbId) {
+                totalPrice = totalPrice + object.totalPrice;
+                return true;
+              }
+            });
+          }
+          pieObject.value = Math.round((totalPrice + Number.EPSILON) * 100) / 100;;
+          pieObject.lmvIds = buckets[valueKey];
+          pieOpts.data.content.push(pieObject);
+      }
+    }
+    else if (reportObj.fieldName === "provider") {
+      for (var valueKey in buckets) {
+          var pieObject = {};
+          var totalPrice = 0;
+          pieObject.label = valueKey;
+          console.log("Label: ", valueKey);
+          for (var docId in buckets[valueKey]) {
+            window.objectArray.forEach((object, i) => {
+              if (buckets[valueKey][docId] == object.dbId) {
+                console.log("Object: ", object);
+                totalPrice = totalPrice + object.totalPrice;
+                return true;
+              }
+            });
+          }
+          pieObject.value = Math.round((totalPrice + Number.EPSILON) * 100) / 100;;
+          pieObject.lmvIds = buckets[valueKey];
+          console.log(pieObject);
           pieOpts.data.content.push(pieObject);
       }
     }

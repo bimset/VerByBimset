@@ -1,3 +1,5 @@
+import hexToVector4 from "./LoadModel.js";
+
 // *******************************************
 // Firebase (Docking) Panel
 // *******************************************
@@ -22,26 +24,38 @@ function FirebasePanel(viewer, container, id, title, options) {
       window.objectArray.forEach((object, i) => {
         if (window._viewerMain.getSelection()[0] == object.dbId) {
           rows = [
-          ["dbId", object.dbId],
-          ["docId", object.docId],
-          ["assetType", object.assetType],
-          ["belongsTo", object.belongsTo],
-          ["brand", object.brand],
-          ["description", object.description],
-          ["hasSSD", object.hasSSD],
-          ["isAssigned", object.isAssigned],
-          ["memory", object.memory],
-          ["model", object.model],
-          ["processor", object.processor],
-          ["processorBrand", object.processorBrand],
-          ["serialNumber", object.serialNumber],
-          ["serviceTag", object.serviceTag],
-          ["vRAM", object.vRAM],
-          ["videocard", object.videocard],
-          ["videocardBrand", object.videocardBrand]];
+            ["dbId", object.dbId],
+            ["docId", object.docId],
+            ["Color", object.color],
+            ["Nombre", object.name],
+            ["Costo Paramétrico", object.price],
+            ["Numero de contrato", object.contractNo],
+            ["Proveedor", object.provider]];
         }
       });
       this._table.setData(rows, cols);
+    }else if (currSelection.length > 1) {
+
+      var totalPrice = 0;
+      var allProviders = "";
+
+      window.objectArray.forEach((object, i) => {
+        window._viewerMain.getSelection().forEach((dbId, i) =>{
+          if (dbId == object.dbId) {
+            totalPrice = totalPrice + object.totalPrice;
+            if (allProviders.search(object.provider) < 0) {
+              allProviders = allProviders + " " + object.provider;
+            }
+          }
+        });
+      });
+
+      rows = [
+      ["dbId", "Multi-select"],
+      ["docId", "Multi-select"],
+      ["Nombre", "Multi-select"],
+      ["Costo de selección", "$" + totalPrice],
+      ["Proveedores seleccionados", allProviders]];
     } else {
       // this is where we should place the content of our panel
       var div = document.createElement('div');
@@ -113,35 +127,47 @@ FirebaseExtension.prototype.createUI = function () {
       var currSelection = window._viewerMain.getSelection();
 
       if (currSelection.length == 1) {
-          window.objectArray.forEach((object, i) => {
-            if (window._viewerMain.getSelection()[0] == object.dbId) {
-              rows = [
-              ["dbId", object.dbId],
-              ["division", object.division],
-              ["assigned To", object.name],
-              ["docId", object.docId],
-              ["assetType", object.assetType],
-              ["belongsTo", object.belongsTo],
-              ["brand", object.brand],
-              ["description", object.description],
-              ["hasSSD", object.hasSSD],
-              ["isAssigned", object.isAssigned],
-              ["memory", object.memory],
-              ["model", object.model],
-              ["processor", object.processor],
-              ["processorBrand", object.processorBrand],
-              ["serialNumber", object.serialNumber],
-              ["serviceTag", object.serviceTag],
-              ["vRAM", object.vRAM],
-              ["videocard", object.videocard],
-              ["videocardBrand", object.videocardBrand]];
+        window.objectArray.forEach((object, i) => {
+          if (window._viewerMain.getSelection()[0] == object.dbId) {
+            rows = [
+            ["dbId", object.dbId],
+            ["docId", object.docId],
+            ["Color", object.color],
+            ["Nombre", object.name],
+            ["Costo Paramétrico", "$" + object.totalPrice],
+            ["Numero de contrato", object.contractNo],
+            ["Proveedor", object.provider]];
+          }
+        });
+      } else if (currSelection.length > 1) {
+
+        var totalPrice = 0;
+        var allProviders = "";
+
+        window.objectArray.forEach((object, i) => {
+          window._viewerMain.getSelection().forEach((dbId, i) =>{
+            if (dbId == object.dbId) {
+              totalPrice = totalPrice + object.totalPrice;
+              if (allProviders.search(object.provider) < 0) {
+                allProviders = allProviders + " " + object.provider;
+              }
             }
           });
-          if (panel.isVisible()) {
-            console.log("Table inside selection changed and panel isVisible: ", panel._table);
-            panel._table.destroyTable();
-            panel._table.setData(rows, cols);
-          }
+        });
+
+        rows = [
+        ["dbId", "Multi-select"],
+        ["docId", "Multi-select"],
+        ["Nombre", "Multi-select"],
+        ["Costo de selección", "$" + totalPrice],
+        ["Proveedores seleccionados", allProviders]];
+      }
+      if (panel != null){
+        if (panel.isVisible()) {
+          console.log("Table inside selection changed and panel isVisible: ", panel._table);
+          panel._table.destroyTable();
+          panel._table.setData(rows, cols);
+        }
       }
     });
 };
@@ -152,3 +178,82 @@ FirebaseExtension.prototype.unload = function () {
 };
 
 Autodesk.Viewing.theExtensionManager.registerExtension('FirebaseExtension', FirebaseExtension);
+
+
+
+
+
+
+
+// *******************************************
+// My Color Extension
+// *******************************************
+
+function MyColorExtension(viewer, options) {
+    Autodesk.Viewing.Extension.call(this, viewer, options);
+  }
+
+  MyColorExtension.prototype = Object.create(Autodesk.Viewing.Extension.prototype);
+  MyColorExtension.prototype.constructor = MyColorExtension;
+
+  MyColorExtension.prototype.load = function() {
+
+    if (this.viewer.toolbar) {
+      // Toolbar is already available, create the UI
+      this.createUI();
+    } else {
+      // Toolbar hasn't been created yet, wait until we get notification of its creation
+      this.onToolbarCreatedBinded = this.onToolbarCreated.bind(this);
+      this.viewer.addEventListener(Autodesk.Viewing.TOOLBAR_CREATED_EVENT, this.onToolbarCreatedBinded);
+    }
+
+    return true;
+  };
+
+  MyColorExtension.prototype.onToolbarCreated = function() {
+    this.viewer.removeEventListener(Autodesk.Viewing.TOOLBAR_CREATED_EVENT, this.onToolbarCreatedBinded);
+    this.onToolbarCreatedBinded = null;
+    this.createUI();
+  };
+
+  MyColorExtension.prototype.createUI = function() {
+    // alert('TODO: Create Toolbar!');
+
+    var viewer = this.viewer;
+
+    // Button 1
+    var button1 = new Autodesk.Viewing.UI.Button('red-bunny');
+    var colored = true;
+
+    button1.onClick = function(e) {
+      var objArray = window.objectArray;
+
+      if (colored) {
+        viewer.clearThemingColors(window._viewerMain.model);
+        colored = false;
+      } else {
+        objArray.forEach( function(object, index, tempArray) {
+          window._viewerMain.setThemingColor(object.dbId, hexToVector4(object.color));
+        });
+
+        colored = true;
+      }
+    };
+
+    button1.addClass('blackandwhite');
+    button1.setToolTip('Color Switch');
+
+    // SubToolbar
+    this.subToolbar = new Autodesk.Viewing.UI.ControlGroup('my-custom-view-toolbar');
+    this.subToolbar.addControl(button1);
+
+    viewer.toolbar.addControl(this.subToolbar);
+  };
+
+  MyColorExtension.prototype.unload = function() {
+    this.viewer.toolbar.removeControl(this.subToolbar);
+    return true;
+  };
+
+
+  Autodesk.Viewing.theExtensionManager.registerExtension('MyColorExtension', MyColorExtension);
