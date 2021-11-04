@@ -1,4 +1,3 @@
-const themes = require('./Themes.js');
 const cameraPin = require('./CameraPin.js');
 
 var _lastPanel;

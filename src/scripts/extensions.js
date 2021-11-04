@@ -28,7 +28,7 @@ function FirebasePanel(viewer, container, id, title, options) {
             ["docId", object.docId],
             ["Color", object.color],
             ["Nombre", object.name],
-            ["Costo Paramétrico", object.price],
+            ["Costo Paramétrico", "$"+ object.totalPrice],
             ["Numero de contrato", object.contractNo],
             ["Proveedor", object.provider]];
         }
@@ -165,7 +165,8 @@ FirebaseExtension.prototype.createUI = function () {
       if (panel != null){
         if (panel.isVisible()) {
           console.log("Table inside selection changed and panel isVisible: ", panel._table);
-          panel._table.destroyTable();
+          panel._table.clearAggregates();
+          $("#datatable").html("");
           panel._table.setData(rows, cols);
         }
       }

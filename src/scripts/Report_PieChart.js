@@ -7,17 +7,10 @@ window._sortOrder = "value-desc";
 let _reportOptions = [
     { label : "Precio - Tipo",             fieldName: "totalPrice",                  fieldType : "ModelType"},
     { label : "Precio - Proveedor",             fieldName: "provider",                  fieldType : "ModelType"},
+    { label : "Precio - docID",             fieldName: "totalPrice",                  fieldType : "docId"},
     { label : "Cantidad - Tipo",             fieldName: "",                  fieldType : "ModelType"},
-    { label : "Suma por categoría - Lenght",            fieldName: "Length",             fieldType : "PropertySum"},
-    { label : "Cantidad - Nivel",            fieldName: "Level",             fieldType : "Properties"},
-    { label : "Cantidad - System Type",      fieldName: "System Type",       fieldType : "Properties"},
-    { label : "Cantidad - Assembly Code",    fieldName: "Assembly Code",     fieldType : "Properties"},
-    { label : "Cantidad - Keynote",    		 fieldName: "Keynote",     		fieldType : "Properties"},
-    { label : "Cantidad - Material",         fieldName: "Material",          fieldType : "Properties"},
-    { label : "Cantidad - Type Mark",             fieldName: "Type Mark",              fieldType : "Properties"},
-    { label : "Cantidad - Volumen",           fieldName: "Volume",            fieldType : "Quantity"},
-    { label : "Cantidad - Area",             fieldName: "Area",              fieldType : "Quantity"},
-    { label : "Cantidad - Length",             fieldName: "Length",              fieldType : "Quantity"}
+    { label : "Cantidad - docID",             fieldName: "",                  fieldType : "docId"},
+    { label : "Area - docID",             fieldName: "area",                  fieldType : "docId"}
 ];
 
     // populate the popup menu with the avaialable models to load (from the array above)
@@ -54,7 +47,15 @@ function runReport(index) {
     _currentQty = null;
     _currentBound = null;
 
-    if (reportObj.fieldName === "provider") {
+    if (reportObj.fieldType === "docId") {
+      if (reportObj.fieldName === "" && reportObj.fieldName === "area") {
+        var modelTypes = reportData.groupDataByDocidFromLocal();
+        wrapDataForPieChart(modelTypes);
+      } else {
+        var modelTypes = reportData.groupDataByDocid();
+        wrapDataForPieChart(modelTypes);
+      }
+    } else if (reportObj.fieldName === "provider") {
       var modelTypes = reportData.groupDataByProvider();
       wrapDataForPieChart(modelTypes);
     } else if (reportObj.fieldType === "ModelType") {
@@ -153,6 +154,29 @@ function wrapDataForPieChart(buckets, misCount) {
           pieOpts.data.content.push(pieObject);
       }
     }
+    else if (reportObj.fieldName === "area") {
+      for (var valueKey in buckets) {
+          var pieObject = {};
+          var totalArea = 0;
+          pieObject.label = valueKey;
+          for (var docId in buckets[valueKey]) {
+            window.objectArray.forEach((object, i) => {
+              if (object.docId == "NA") {
+
+              } else {
+                if (buckets[valueKey][docId] == object.dbId) {
+                  console.log("Found match: ", object);
+                  totalArea = totalArea + object.area;
+                  return true;
+                }
+              }
+            });
+          }
+          pieObject.value = totalArea;
+          pieObject.lmvIds = buckets[valueKey];
+          pieOpts.data.content.push(pieObject);
+      }
+    }
     else if (reportObj.fieldName === "totalPrice") {
       for (var valueKey in buckets) {
           var pieObject = {};
@@ -160,9 +184,13 @@ function wrapDataForPieChart(buckets, misCount) {
           pieObject.label = valueKey;
           for (var docId in buckets[valueKey]) {
             window.objectArray.forEach((object, i) => {
-              if (buckets[valueKey][docId] == object.dbId) {
-                totalPrice = totalPrice + object.totalPrice;
-                return true;
+              if (object.docId == "NA") {
+
+              } else {
+                if (buckets[valueKey][docId] == object.dbId) {
+                  totalPrice = totalPrice + object.totalPrice;
+                  return true;
+                }
               }
             });
           }
@@ -180,7 +208,6 @@ function wrapDataForPieChart(buckets, misCount) {
           for (var docId in buckets[valueKey]) {
             window.objectArray.forEach((object, i) => {
               if (buckets[valueKey][docId] == object.dbId) {
-                console.log("Object: ", object);
                 totalPrice = totalPrice + object.totalPrice;
                 return true;
               }

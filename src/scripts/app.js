@@ -10,7 +10,6 @@ require('./LoadModel.js');
 require('./ReportData.js');
 require('./Report_BarChart.js');
 require('./Relationships.js');
-require('./Themes.js');
 require('./CameraPin.js');
 require('./PinData.js');
 require('./PinUI.js');

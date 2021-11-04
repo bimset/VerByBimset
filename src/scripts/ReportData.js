@@ -46,6 +46,43 @@ function groupDataByProvider(){
   return subTypes;
 }
 
+function groupDataByDocid(){
+  var subTypes = {};
+
+  $.each(window.objectArray, function(i, object) {
+    if (subTypes[object.docId] == undefined) {
+      subTypes[object.docId] = new Array();
+    }
+      subTypes[object.docId].push(object.dbId);
+  });
+
+  console.log("Subtypes: ", subTypes);
+
+  return subTypes;
+}
+
+function groupDataByDocidFromLocal(){
+  var subTypes = {};
+
+  $.each(window.objectArray, function(i, object) {
+    if (subTypes[object.docId] == undefined) {
+      subTypes[object.docId] = new Array();
+    }
+      subTypes[object.docId].push(object.dbId);
+  });
+
+  $.each(window.noneObjectArray, function(i, object) {
+    if (subTypes["NA"] == undefined) {
+      subTypes["NA"] = new Array();
+    }
+      subTypes["NA"].push(object.dbId);
+  });
+
+  console.log("Subtypes: ", subTypes);
+
+  return subTypes;
+}
+
 //****************************************************************************************
 //
 //      Group data according to node model types
@@ -203,6 +240,8 @@ module.exports = {
   groupDataByProvider,
   groupDataByProperty,
   getQtyDataByProperty,
+  groupDataByDocid,
   groupQtyDataByRange,
+  groupDataByDocidFromLocal,
   _modelLeafNodes
 }

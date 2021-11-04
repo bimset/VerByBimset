@@ -22,7 +22,6 @@ var _blockEventSecondary = false;
 const pieChartReport = require('./Report_PieChart.js');
 const reportData = require('./ReportData.js');
 const authToken = require('./MyAuthToken.js');
-const themes = require('./Themes.js');
 const cameraPin = require('./CameraPin.js');
 const extensions = require('./extensions.js');
 import { userFunction } from './firebaseData.js';
@@ -50,6 +49,7 @@ const firebaseConfig = {
 var _viewerEnv = "AutodeskProduction";
 var _myAuthToken = new authToken.MyAuthToken("PROD");
 window.objectArray = new Array();
+window.noneObjectArray = new Array();
 
 
 function blankOutReportPane() {
@@ -80,7 +80,6 @@ $("#pu_modelToLoad").change(function(evt) {
   loadDocument(models[index].urn);
 
   cameraPin.uninitializePinPanel();
-  themes.unitializeThemePanel();
   blankOutReportPane();
 });
 
@@ -181,6 +180,17 @@ function getObjectData(docId, dbId, area){
         window.objectArray.push(arrayObj);
       } else {
         console.log("No such document!");
+        var arrayObj =  {
+          dbId: dbId,
+          docId: "NA",
+          color: "NA",
+          name: "NA",
+          price: 0,
+          contractNo: "NA",
+          provider: "NA",
+          area: "NA"
+        };
+        window.noneObjectArray.push(arrayObj);
       }
     }).catch((error) => {
       console.log("Error getting document:", error);
