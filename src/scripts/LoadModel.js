@@ -218,12 +218,7 @@ function initializeViewerMain() {
   }
 
   var viewerElement = document.getElementById("viewerMain"); // placeholder in HTML to stick the viewer
-  var config3d = {
-    loaderExtensions: {
-      svf: "Autodesk.MemoryLimited"
-    }
-  };
-  window._viewerMain = new Autodesk.Viewing.GuiViewer3D(viewerElement, config3d);
+  window._viewerMain = new Autodesk.Viewing.GuiViewer3D(viewerElement);
 
   var retCode = window._viewerMain.initialize();
   if (retCode !== 0) {
@@ -370,6 +365,9 @@ function loadDocument(urnStr) {
         alert("ERROR: No 3D or 2D views found in this drawing!");
       }
     }
+
+    window._viewerMain.loadDocumentNode(document, _views3D[0]);
+
     // now load the Secondary viewer with the first 2D view by default
     if (_views2D.length > 0) {
       loadView(window._viewerSecondary, _views2D[0]);
@@ -436,7 +434,8 @@ function loadInitialModel() {
   loadModelMenuOptions(); // populate the list of available models for the user
 
   var options = {
-    env: _viewerEnv, // AutodeskProduction, AutodeskStaging, or AutodeskDevelopment (set in global var in this project)
+    env: 'AutodeskProduction2',
+    api: 'streamingV2',
     getAccessToken: getAccessToken,
     refreshToken: getAccessToken
   };
