@@ -172,7 +172,7 @@ function getObjectData(docId, dbId, area){
           arrayObj.totalPrice = Math.round((data.price * area + Number.EPSILON) * 100) / 100;
             break;
           default:
-          arrayObj.totalPrice = 0;
+          arrayObj.totalPrice = data.price;
         }
         var color = data.color;
         window._viewerMain.setThemingColor(dbId, hexToVector4(color));
@@ -228,12 +228,12 @@ function initializeViewerMain() {
 
   // when the geometry is loaded, automatically run the first report
 
-  pieChartReport.disableReportMenu();
+  //pieChartReport.disableReportMenu();
   window._viewerMain.addEventListener(Autodesk.Viewing.GEOMETRY_LOADED_EVENT, function(event) {
 
+    window._viewerMain.loadExtension('FirebaseExtension', { param1: 'value1' });
+    window._viewerMain.loadExtension('MyColorExtension', { param1: 'value2' });
     pieChartReport.enableReportMenu();
-    //runReport(-1);   // run the currently selected report (the first one if this is the first model loaded, current one if loading a subsequent model)
-
     $("#tab_button_1").click();
     reportData.startReportDataLoader(pieChartReport.runReport);
 
@@ -356,21 +356,11 @@ function loadDocument(urnStr) {
 
     // load up first 3D view by default into the primary viewer
     if (_views3D.length > 0) {
-      loadView(window._viewerMain, _views3D[0]);
-    } else { // there weren't any 3D views!
-      if (_views2D.length > 0) {
-        loadView(window._viewerMain, _views2D[0]);
-        $('#pu_viewToLoad').val('1000'); // selects first option in 2D list
-      } else {
-        alert("ERROR: No 3D or 2D views found in this drawing!");
-      }
+      window._viewerMain.loadDocumentNode(document, _views3D[0]);
     }
-
-    window._viewerMain.loadDocumentNode(document, _views3D[0]);
-
     // now load the Secondary viewer with the first 2D view by default
     if (_views2D.length > 0) {
-      loadView(window._viewerSecondary, _views2D[0]);
+      window._viewerSecondary.loadDocumentNode(document, _views2D[0]);
       $('#pu_viewToLoad').val('1000'); // selects first option in 2D list
     } else {
       console.log("WARNING: No 2D views found for secondary view, removing secondary view");
@@ -387,8 +377,6 @@ function loadDocument(urnStr) {
 
 // for now, just simple diagnostic functions to make sure we know what is happing
 function loadViewSuccessFunc() {
-  window._viewerMain.loadExtension('FirebaseExtension', { param1: 'value1' });
-  window._viewerMain.loadExtension('MyColorExtension', { param1: 'value2' });
   console.log("Loaded viewer successfully with given asset...");
 }
 

@@ -23955,7 +23955,7 @@ function getObjectData(docId, dbId, area) {
           break;
 
         default:
-          arrayObj.totalPrice = 0;
+          arrayObj.totalPrice = data.price;
       }
 
       var color = data.color;
@@ -24002,12 +24002,7 @@ function initializeViewerMain() {
 
   var viewerElement = document.getElementById("viewerMain"); // placeholder in HTML to stick the viewer
 
-  var config3d = {
-    loaderExtensions: {
-      svf: "Autodesk.MemoryLimited"
-    }
-  };
-  window._viewerMain = new Autodesk.Viewing.GuiViewer3D(viewerElement, config3d);
+  window._viewerMain = new Autodesk.Viewing.GuiViewer3D(viewerElement);
 
   var retCode = window._viewerMain.initialize();
 
@@ -24015,13 +24010,19 @@ function initializeViewerMain() {
     alert("ERROR: Couldn't initialize main viewer!");
     console.log("ERROR Code: " + retCode); // TBD: do real error handling here
   } // when the geometry is loaded, automatically run the first report
+  //pieChartReport.disableReportMenu();
 
-
-  pieChartReport.disableReportMenu();
 
   window._viewerMain.addEventListener(Autodesk.Viewing.GEOMETRY_LOADED_EVENT, function (event) {
-    pieChartReport.enableReportMenu(); //runReport(-1);   // run the currently selected report (the first one if this is the first model loaded, current one if loading a subsequent model)
+    window._viewerMain.loadExtension('FirebaseExtension', {
+      param1: 'value1'
+    });
 
+    window._viewerMain.loadExtension('MyColorExtension', {
+      param1: 'value2'
+    });
+
+    pieChartReport.enableReportMenu();
     $("#tab_button_1").click();
     reportData.startReportDataLoader(pieChartReport.runReport);
 
@@ -24144,20 +24145,13 @@ function loadDocument(urnStr) {
     initializeViewerSecondary(_views2D); // load up first 3D view by default into the primary viewer
 
     if (_views3D.length > 0) {
-      loadView(window._viewerMain, _views3D[0]);
-    } else {
-      // there weren't any 3D views!
-      if (_views2D.length > 0) {
-        loadView(window._viewerMain, _views2D[0]);
-        $('#pu_viewToLoad').val('1000'); // selects first option in 2D list
-      } else {
-        alert("ERROR: No 3D or 2D views found in this drawing!");
-      }
+      window._viewerMain.loadDocumentNode(document, _views3D[0]);
     } // now load the Secondary viewer with the first 2D view by default
 
 
     if (_views2D.length > 0) {
-      loadView(window._viewerSecondary, _views2D[0]);
+      window._viewerSecondary.loadDocumentNode(document, _views2D[0]);
+
       $('#pu_viewToLoad').val('1000'); // selects first option in 2D list
     } else {
       console.log("WARNING: No 2D views found for secondary view, removing secondary view");
@@ -24172,14 +24166,6 @@ function loadDocument(urnStr) {
 
 
 function loadViewSuccessFunc() {
-  window._viewerMain.loadExtension('FirebaseExtension', {
-    param1: 'value1'
-  });
-
-  window._viewerMain.loadExtension('MyColorExtension', {
-    param1: 'value2'
-  });
-
   console.log("Loaded viewer successfully with given asset...");
 }
 
@@ -24220,8 +24206,8 @@ function loadInitialModel() {
   loadModelMenuOptions(); // populate the list of available models for the user
 
   var options = {
-    env: _viewerEnv,
-    // AutodeskProduction, AutodeskStaging, or AutodeskDevelopment (set in global var in this project)
+    env: 'AutodeskProduction2',
+    api: 'streamingV2',
     getAccessToken: getAccessToken,
     refreshToken: getAccessToken
   };
